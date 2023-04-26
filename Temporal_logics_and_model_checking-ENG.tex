@@ -1,0 +1,769 @@
+\documentclass{beamer}
+\setbeamertemplate{footline}[frame number]
+\setbeamertemplate{itemize item}[circle]
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{tabto}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{rotating}
+\usepackage{arydshln}
+\usepackage{multicol}
+\usepackage{amsfonts}
+\usepackage{makecell}
+\usepackage{xcolor}
+\usepackage{cancel}
+\usepackage[
+    type={CC},
+    modifier={by-sa},
+    version={4.0},
+]{doclicense}
+\usepackage{tikz}
+\usetikzlibrary{automata}
+\usetikzlibrary{positioning}
+\usetikzlibrary{arrows}
+\newcolumntype{Y}{>{\centering\arraybackslash}X}
+
+\makeatletter
+\newcommand{\mylabel}[2]{#2\def\@currentlabel{#2}\label{#1}}
+\makeatother
+
+\newcommand{\hyp}[1]{{\small {#1}}}
+
+% cancel package line color - https://mirrors.nxthost.com/ctan/macros/latex/contrib/cancel/cancel.pdf
+\renewcommand{\CancelColor}{\color{red}}
+
+\title{Temporal Logics and Model Checking}
+\author{Francesco Goretti}
+\institute{Alma Mater Studiorum - University of Bologna\endgraf
+Presentation for the course of Logic Methods for Philosophy}
+\date{\small{26/04/2023}}
+
+\begin{document}
+\begin{frame}[plain]
+    \titlepage
+    \centering\doclicenseImage[imagewidth=5em]
+\end{frame}
+
+\begin{frame}{Temporal logics}
+    \begin{itemize}
+        \item Michele has always driven\medskip
+        \item Michele drove\medskip
+        \item Michele had driven\medskip
+        \item Michele will drive\medskip
+        \item Michele will always drive
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Temporal logics - Syntax}
+    Let $\phi := \left.\{ p_0, p_1, p_2, ... \right.\}$ be the set of atomic predicates.\endgraf\bigskip
+    The set of temporal formulas $F_m^\phi$ is defined as follows:
+    \begin{itemize}
+        \item $p_i \in \phi$ implies $p_i \in F_m^\phi$
+        \item $\bot \in F_m^\phi$
+        \item $A \in F_m^\phi$ implies $\neg A \in F_m^\phi$
+        \item $A,B \in F_m^\phi$ implies $(A \land B),(A \lor B),(A \to B) \in F_m^\phi$
+        \item $A \in F_m^\phi$ implies $\textsc{H}A,\textsc{G}A,\textsc{P}A,\textsc{F}A \in F_m^\phi$
+        \item $F_m^\phi$ doesn’t contain anything else
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Temporal logics - Temporal operators}
+    \textsc{H}: "It was always the case that"\\\medskip
+    \textsc{G}: "It will be always the case that"\\\medskip
+    \textsc{P}: "It was the case that"\\\medskip
+    \textsc{F}: "It will be the case that"\medskip
+    $$\textsc{H}, \textsc{G} \hspace{10pt} \sim \hspace{10pt} \Box$$
+    $$\textsc{P}, \textsc{F} \hspace{11pt} \sim \hspace{11pt} \Diamond$$
+    \endgraf
+    \vspace{0.5em}
+    \endgraf
+    \textbf{Duality:}
+    \endgraf
+    \vspace{1em}
+    \endgraf
+    $\hspace{2em} \neg \textsc{H} \neg A = \textsc{P}A$\endgraf
+    $\hspace{2em} \neg \textsc{G} \neg A = \textsc{F}A$
+\end{frame}
+
+\begin{frame}{Temporal logics - Examples}
+    $$p := \text{"Michele drives"}$$
+    \begin{itemize}
+        \item Michele has always driven\tab $\hspace{40pt} \textsc{H}p$\medskip
+        \item Michele drove\tab $\hspace{40pt} \textsc{P}p$\medskip
+        \item Michele had driven\tab $\hspace{40pt} \textsc{PP}p$\medskip
+        \item Michele will drive\tab $\hspace{40pt} \textsc{F}p$\medskip
+        \item Michele will always drive\tab $\hspace{40pt} \textsc{G}p$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Temporal logics - Semantics}
+    A temporal model \textsc{M} is defined as follows:
+    $$\textsc{M} := \left.<\textsc{T}, \texttt{<}, \textsc{I}\right.>$$
+    where
+    \begin{itemize}
+        \item $\textsc{T} := \left.\{t_0, t_1, t_2, ... \right.\}$ non-empty set of instants
+        \item $\texttt{<} \subseteq \textsc{T}\times\textsc{T}$ relation of temporal precedence
+        \item $\textsc{I}: \phi \to \mathcal{P}(\textsc{T})$ valuation function
+    \end{itemize}
+    \endgraf
+    \bigskip
+    A temporal frame \textsc{F} is defined as follows:
+    $$\textsc{F} := \left.<\textsc{T}, \texttt{<}\right.>$$
+\end{frame}
+
+\begin{frame}{Temporal Logics - Truth value of a formula}
+    Truth value of a formula $A$ in an instant $t \in \textsc{T}$ of a model \textsc{M}:
+    \begin{itemize}
+        \item $\vDash_t p_i$ \hspace{2em} iff \hspace{2em} $t \in \textsc{I}(p_i)$
+        \item $\nvDash_t \bot$
+        \item $\vDash_t \neg B$ \hspace{3em} iff \hspace{2em} $\nvDash_t B$
+        \item $\vDash_t B \land C$ \hspace{2em} iff \hspace{2em} $\vDash_t B$ and $\vDash_t C$
+        \item $\vDash_t B \lor C$ \hspace{2.05em} iff \hspace{2em} $\vDash_t B$ or $\vDash_t C$
+        \item $\vDash_t B \to C$ \hspace{1.6em} iff \hspace{2em} $\nvDash_t B$ or $\vDash_t C$
+        \medskip
+        \item $\vDash_t \textsc{H}B$ \hspace{2em} iff \hspace{2em} $\forall {t'} \in \textsc{T} ({t'} \texttt{<} t$ implies $\vDash_{t'} B)$
+        \item $\vDash_t \textsc{G}B$ \hspace{2em} iff \hspace{2em} $\forall {t'} \in \textsc{T} (t \texttt{<} {t'}$ implies $\vDash_{t'} B)$
+        \item $\vDash_t \textsc{P}B$ \hspace{2.14em} iff \hspace{2em} $\exists {t'} \in \textsc{T} ({t'} \texttt{<} t$ and $\vDash_{t'} B)$
+        \item $\vDash_t \textsc{F}B$ \hspace{2.15em} iff \hspace{2em} $\exists {t'} \in \textsc{T} (t \texttt{<} {t'}$ and $\vDash_{t'} B)$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{K\textsubscript{t} logic}
+    It's a set of formulas $\Gamma$ such that:
+    \begin{itemize}
+        \item $\textsc{TAUT} \in \Gamma$
+        \item $\textsc{H}(A \to B) \to (\textsc{H}A \to \textsc{H}B) \in \Gamma$
+        \item $\textsc{G}(A \to B) \to (\textsc{G}A \to \textsc{G}B) \in \Gamma$
+        \item $A \to \textsc{H}\textsc{F}A \in \Gamma$
+        \item $A \to \textsc{G}\textsc{P}A \in \Gamma$
+        \item $\frac{A \to B \in \Gamma \hspace{2em} A \in \Gamma}{B \in \Gamma}$ \tab\hspace{-4em}(modus ponens)
+        \item $\frac{A \in \Gamma}{HA \in \Gamma}$ \hspace{0.5em} $\frac{A \in \Gamma}{GA \in \Gamma}$ \tab\hspace{-4em}(necessitation)
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{K4\textsubscript{t} logic}
+    $$\textup{K4\textsubscript{t}} = \textup{K\textsubscript{t}} + \textup{"}\textsc{H}A \to \textsc{HH}A\textup{"}$$
+    $$\textup{(transitivity)}$$
+    \endgraf
+    \bigskip
+    \endgraf
+    \bigskip
+    $$\textup{if } t \texttt{<} {t'} \textup{ and } {t'} \texttt{<} {t''} \textup{ then } t \texttt{<} {t''}$$
+\end{frame}
+
+\setlength{\columnsep}{-17em}
+\begin{frame}{Linear past and future}
+    \begin{multicols}{2}
+    In K4\textsubscript{t}, past and future are branched.\endgraf\vspace{1em}
+    To have a linear past the following clause is added to the definition of $\Gamma$:\endgraf\vspace{1em}
+    \centering $\textsc{FP}A \to \textsc{P}A \lor A \lor \textsc{F}A \in \Gamma$\endgraf\vspace{1em}
+    \raggedright which corresponds to trichotomy:\endgraf\vspace{1em}
+    \centering $t \texttt{<} {t''}$ and ${t'} \texttt{<} {t''}$ implies 
+    $t \texttt{<} {t'} $ or $t = {t'}$ or ${t'} \texttt{<} t$\endgraf\vspace{2em}
+    \raggedright Instead, to have a linear future the following clause is added:\endgraf\vspace{1em}
+    \centering $\textsc{PF}A \to \textsc{P}A \lor A \lor \textsc{F}A \in \Gamma$\endgraf
+    \raggedright
+    \endgraf
+    \columnbreak
+    \begin{flushright}
+    \begin{tikzpicture}[very thick, vertex/.style={draw, circle, minimum size=3ex}]
+    \node (z) at (0,7) {};
+    \node (a) at (0,6) [vertex] { };
+    \node (b) at (0,5) [vertex] { };
+    \node (c) at (0,4) [vertex] { };
+    \node (d) at (0,3) [vertex] { };
+    \node (e) at (0,2) [vertex] { };
+    \node (f) at (0,1) [vertex] { };
+    \node (g) at (0,0) {};
+    \draw (g) edge[->, dashed] (f)
+          (f) edge[->] (e)
+          (e) edge[->] (d)
+          (d) edge[->] (c)
+          (c) edge[->] (b)
+          (b) edge[->] (a)
+          (a) edge[-, dashed] (z);
+    \end{tikzpicture}
+    \end{flushright}
+    \end{multicols}
+\end{frame}
+\setlength{\columnsep}{10pt} % default is 10pt
+
+\begin{frame}{Branched future}
+\begin{center}
+    \begin{tikzpicture}[very thick, vertex/.style={draw, circle, minimum size=3ex}]
+    \node (0) at (-2.5,6) {};
+    \node (1) at (-1.5,6) {};
+    \node (2) at (-1,6) {};
+    \node (3) at (0,6) {};
+    \node (4) at (0,6)  {};
+    \node (5) at (1,6)  {};
+    \node (6) at (1.5,6)  {};
+    \node (7) at (2.5,6)  {};
+    \node (a) at (-2,5) [vertex] { };
+    \node (b) at (-0.5,5) [vertex] { };
+    \node (c) at (0.5,5) [vertex] { };
+    \node (d) at (2,5) [vertex] { };
+    \node (e) at (-1.15,4) [vertex] { };
+    \node (f) at (1.15,4) [vertex] { };
+    \node (t) at (0,3) [vertex] {t};
+    \node (g) at (0,2) [vertex] { };
+    \node (h) at (0,1) [vertex] { };
+    \node (i) at (0,0) {};
+    \draw (a) edge[-, dashed] (0)
+          (a) edge[-, dashed] (1)
+          (b) edge[-, dashed] (2)
+          (b) edge[-, dashed] (3)
+          (c) edge[-, dashed] (4)
+          (c) edge[-, dashed] (5)
+          (d) edge[-, dashed] (6)
+          (d) edge[-, dashed] (7)
+          (f) edge[->] (d)
+          (f) edge[->] (c)
+          (e) edge[->] (b)
+          (e) edge[->] (a)
+          (t) edge[->] (f)
+          (t) edge[->] (e)
+          (g) edge[->] (t)
+          (h) edge[->] (g)
+          (i) edge[->, dashed] (h);
+    \end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{Model Checking}
+    \begin{center}
+    Model checking is an automated method of verification of properties on a finite-state model.
+    \end{center}
+    \endgraf\bigskip
+    \begin{center}
+    \begin{tikzpicture}[very thick, vertex/.style={draw, circle, minimum size=1.8em}]
+    \node (a) at (0,1) [vertex] {a};
+    \node (b) at (1,2) [vertex] {b};
+    \node (c) at (1,0) [vertex] {c};
+    \node (d) at (3,2) [vertex] {d};
+    \node (e) at (3,0) [vertex] {e};
+    \node (f) at (3.75,2) {};
+    \draw (a) edge[->] (b)
+          (b) edge[->] (c)
+          (a) edge[->, out=160,in=200,looseness=8] (a)
+          (a) edge[->, out=-35, in=125] (c)
+          (c) edge[->, out=155, in=-65] (a)
+          (c) edge[->] (e)
+          (b) edge[->] (d)
+          (f) edge[->] (d)
+          (d) edge[->] (c)
+          (e) edge[->] (d);
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Kripke structure}
+    \begin{center}
+        A Kripke structure is a quadruple $\left.<\textsc{S}, \textsc{S}_0, \textsc{R}, \textsc{I}\right.>$ where:
+    \end{center}\endgraf\bigskip
+    \begin{multicols}{2}
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.8cm,inner sep=0,very thick,initial text=$ $]
+    \node[state, initial, label={[yshift=0.15cm]$s_0$}] (1) {\footnotesize $p_1$};
+    \node[state, below left of=1, label={[yshift=-1.45cm]{$s_1$}}] (2) {\footnotesize $p_2$};
+    \node[state, right of=2, label={[yshift=-1.45cm]{$s_2$}}] (3) {\footnotesize $p_0,p_1$};
+    \draw (1) edge[above] (2)
+          (1) edge[below, bend right, left=0.3]  (3)
+          (2) edge[loop left] (2)
+          (2) edge[below] (3)
+          (3) edge[above, bend right, right=0.3] (1);
+    \end{tikzpicture}
+    
+    \endgraf
+    \columnbreak
+
+    \begin{itemize}
+        \item $\textsc{S} = \left.\{s_0, s_1, s_2\right.\}$ set of states
+        \item $\textsc{S}_0 = s_0$ initial state
+        \item $\textsc{R} \subseteq \textsc{S} \times \textsc{S}$ transition relation
+        \item $\textsc{I}: \Phi \to \mathcal{P}(\textsc{S})$ interpretation function
+    \end{itemize}
+    \end{multicols}
+\end{frame}
+
+\begin{frame}{Computation tree logic (CTL)}
+\begin{multicols}{2}
+    \endgraf
+    \hspace{0em}
+    \vspace{3em}
+    \endgraf
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.8cm,inner sep=0,very thick,initial text=$ $]
+    \node[state, initial, label={[yshift=0.15cm]$s_0$}] (1) {\footnotesize $p_1$};
+    \node[state, below left of=1, label={[yshift=-1.45cm]{$s_1$}}] (2) {\footnotesize $p_2$};
+    \node[state, right of=2, label={[yshift=-1.45cm]{$s_2$}}] (3) {\footnotesize $p_0,p_1$};
+    \draw (1) edge[above] (2)
+          (1) edge[below, bend right, left=0.3]  (3)
+          (2) edge[loop left] (2)
+          (2) edge[below] (3)
+          (3) edge[above, bend right, right=0.3] (1);
+    \end{tikzpicture}
+
+    \endgraf
+    \columnbreak
+    \begin{tikzpicture}[thick, vertex/.style={draw, circle, minimum size=2em,inner sep=0}]
+    \node (1) at (0,-1) [vertex] {\footnotesize $p_1$};
+    \node (2) at (1.3,0) [vertex] {\footnotesize $p_2$};
+    \node (3) at (1.3,-2) [vertex] {\footnotesize $p_0,p_1$};
+    \node (4) at (2.6,1) [vertex] {\footnotesize $p_2$};
+    \node (5) at (2.6,-1) [vertex] {\footnotesize $p_0,p_1$};
+    \node (6) at (2.6,-3) [vertex] {\footnotesize $p_1$};
+
+    \node (7) at (3.9,2) [vertex] {\footnotesize $p_2$};
+    \node (8) at (3.9,0.5) [vertex] {\footnotesize $p_0,p_1$};
+    \node (9) at (3.9,-1) [vertex] {\footnotesize $p_1$};
+    \node (10) at (3.9,-2.5) [vertex] {\footnotesize $p_2$};
+    \node (11) at (3.9,-4) [vertex] {\footnotesize $p_0,p_1$};
+
+    \node (a) at (5.2,2.5) {};
+    \node (a1) at (5.2,1.5) {};
+    \node (b) at (5.2,0.5) {};
+    \node (c) at (5.2,-0.5) {};
+    \node (c1) at (5.2,-1.5) {};
+    \node (d) at (5.2,-2) {};
+    \node (d1) at (5.2,-3) {};
+    \node (e) at (5.2,-4) {};
+
+    \draw (1) edge[->] (2)
+          (1) edge[->] (3)
+          (2) edge[->] (4)
+          (2) edge[->] (5)
+          (3) edge[->] (6)
+
+          (4) edge[->] (7)
+          (4) edge[->] (8)
+          (5) edge[->] (9)
+          (6) edge[->] (10)
+          (6) edge[->] (11)
+          
+          (7) edge[-, dashed] (a)
+          (7) edge[-, dashed] (a1)
+          (8) edge[-, dashed] (b)
+          (9) edge[-, dashed] (c)
+          (9) edge[-, dashed] (c1)
+          (10) edge[-, dashed] (d)
+          (10) edge[-, dashed] (d1)
+          (11) edge[-, dashed] (e)
+          ;
+    \end{tikzpicture}
+
+\end{multicols}
+\end{frame}
+
+\begin{frame}{CTL - Syntax}
+    The set of CTL formulas $F_m^\phi$ is defined as follows:
+    \begin{itemize}
+        \item It contains every propositional formula
+        \item $B,C \in F_m^\phi$ implies $\textsc{AX}B,\textsc{AF}B,\textsc{AG}B,\textsc{A}(B\textsc{U}C) \in F_m^\phi$
+        \item $B,C \in F_m^\phi$ implies $\textsc{EX}B,\textsc{EF}B,\textsc{EG}B,\textsc{E}(B\textsc{U}C) \in F_m^\phi$
+        \item $F_m^\phi$ doesn’t contain anything else
+    \end{itemize}
+    \vspace{1em}
+    \begin{center}
+        \begin{multicols}{2}
+            \underline{Quantifiers:}\\\vspace{1em}
+            \textbf{A}ll\\
+            \textbf{E}xists
+            \endgraf
+            \columnbreak
+            \underline{Operators:}\\\vspace{1em}
+            ne\textbf{X}t\\
+            \textbf{F}uture\\
+            \textbf{G}lobally\\
+            \textbf{U}ntil
+        \end{multicols}
+    \end{center}
+\end{frame}
+
+\begin{frame}{CTL - Examples of formulas}
+    \begin{multicols}{2}
+        $B \land C$\endgraf\bigskip
+        $\textsc{AG}(B \land C)$\endgraf\bigskip
+        $\textsc{EX }B$\endgraf\bigskip
+        $\textsc{AG EF }B$\endgraf\bigskip
+        $B \lor \textsc{AG}(C \land \textsc{E(B\textsc{U}D)})$\endgraf
+        \endgraf
+        \columnbreak
+        \hspace{2em}
+        $\bcancel{\textsc{E}}$\endgraf\bigskip
+        \hspace{2em}
+        $\bcancel{\textsc{F}}$\endgraf\bigskip
+        \hspace{2em}
+        $\bcancel{\textsc{A }B}$\endgraf\bigskip
+        \hspace{2em}
+        $\bcancel{\textsc{AE }B}$\endgraf\bigskip
+        \hspace{2em}
+        $\bcancel{\textsc{A }(B \to C)\textsc{X}}$\endgraf\bigskip
+    \end{multicols}
+\end{frame}
+
+\begin{frame}{Path}
+    \begin{center}
+    A path is a non-empty sequence of states such that there always exists a transitions between them.\endgraf\bigskip\endgraf
+    \hspace{-2em}
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.8cm,inner sep=0,very thick,initial text=$ $]
+    \node[state, initial, label={[yshift=0.15cm]$s_0$}] (1) {\footnotesize $p_1$};
+    \node[state, below left of=1, label={[yshift=-1.45cm]{$s_1$}}] (2) {\footnotesize $p_2$};
+    \node[state, right of=2, label={[yshift=-1.45cm]{$s_2$}}] (3) {\footnotesize $p_0,p_1$};
+    \draw (1) edge[above] (2)
+          (1) edge[below, bend right, left=0.3]  (3)
+          (2) edge[loop left] (2)
+          (2) edge[below] (3)
+          (3) edge[above, bend right, right=0.3] (1);
+    \end{tikzpicture}
+    \endgraf\vspace{-1em}
+    $$s_0 \to s_1 \to s_1 \to s_2 \to s_0 \to \dots$$
+    \end{center}
+\end{frame}
+
+\begin{frame}{Path}
+\begin{center}
+    \begin{tikzpicture}[thick, vertex/.style={draw, circle, minimum size=2em,inner sep=0}]
+    \node (1) at (0,-1) [vertex] {\footnotesize $p_1$};
+    \node (2) at (1.3,0) [vertex] {\footnotesize $p_2$};
+    \node (3) at (1.3,-2) [vertex] {\footnotesize $p_0,p_1$};
+    \node (4) at (2.6,1) [vertex] {\footnotesize $p_2$};
+    \node (5) at (2.6,-1) [vertex] {\footnotesize $p_0,p_1$};
+    \node (6) at (2.6,-3) [vertex] {\footnotesize $p_1$};
+
+    \node (7) at (3.9,2) [vertex] {\footnotesize $p_2$};
+    \node (8) at (3.9,0.5) [vertex] {\footnotesize $p_0,p_1$};
+    \node (9) at (3.9,-1) [vertex] {\footnotesize $p_1$};
+    \node (10) at (3.9,-2.5) [vertex] {\footnotesize $p_2$};
+    \node (11) at (3.9,-4) [vertex] {\footnotesize $p_0,p_1$};
+
+    \node (a) at (5.2,2.5) {};
+    \node (a1) at (5.2,1.5) {};
+    \node (b) at (5.2,0.5) {};
+    \node (c) at (5.2,-0.5) {};
+    \node (c1) at (5.2,-1.5) {};
+    \node (d) at (5.2,-2) {};
+    \node (d1) at (5.2,-3) {};
+    \node (e) at (5.2,-4) {};
+
+    \draw (1) edge[->, red] (2)
+          (1) edge[->, blue] (3)
+          (2) edge[->, red] (4)
+          (2) edge[->] (5)
+          (3) edge[->, blue] (6)
+
+          (4) edge[->] (7)
+          (4) edge[->, red] (8)
+          (5) edge[->] (9)
+          (6) edge[->, blue] (10)
+          (6) edge[->] (11)
+          
+          (7) edge[-, dashed] (a)
+          (7) edge[-, dashed] (a1)
+          (8) edge[-, dashed, red] (b)
+          (9) edge[-, dashed] (c)
+          (9) edge[-, dashed] (c1)
+          (10) edge[-, dashed] (d)
+          (10) edge[-, dashed, blue] (d1)
+          (11) edge[-, dashed] (e)
+          ;
+    \end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{CTL - Semantics}
+    Truth value of a CTL formula in a state $s_0 \in \textsc{S}$ of a Kripke structure (temporal cases):
+    \medskip
+    \begin{itemize}
+        \item $\vDash_{s_0} \textsc{AX}B$ \hspace{2em} iff \hspace{2em} $\forall s_0 \to s_1 (\vDash_{s_1} B)$
+        \item $\vDash_{s_0} \textsc{EX}B$ \hspace{2em} iff \hspace{2em} $\exists s_0 \to s_1 (\vDash_{s_1} B)$\smallskip
+
+        \item $\vDash_{s_0} \textsc{AG}B$ \hspace{2em} iff \hspace{2em} $\forall s_0 \to s_1 \to s_2 \to \dots (\forall i (\vDash_{s_i} B))$
+        \item $\vDash_{s_0} \textsc{EG}B$ \hspace{2em} iff \hspace{2em} $\exists s_0 \to s_1 \to s_2 \to \dots (\forall i (\vDash_{s_i} B))$\smallskip
+
+        \item $\vDash_{s_0} \textsc{AF}B$ \hspace{2em} iff \hspace{2em} $\forall s_0 \to s_1 \to s_2 \to \dots (\exists i (\vDash_{s_i} B))$
+        \item $\vDash_{s_0} \textsc{EF}B$ \hspace{2em} iff \hspace{2em} $\exists s_0 \to s_1 \to s_2 \to \dots (\exists i (\vDash_{s_i} B))$\smallskip
+
+        \item $\vDash_{s_0} \textsc{A}(B\textsc{U}C)$ \hspace{2em} iff \\\hspace{2em}$\forall s_0 \to s_1 \to s_2 \to \dots (\exists i (\vDash_{s_i} C $ and $ \forall j < i (\vDash_{s_j} B)))$
+        \item $\vDash_{s_0} \textsc{E}(B\textsc{U}C)$ \hspace{2em} iff \\\hspace{2em}$\exists s_0 \to s_1 \to s_2 \to \dots (\exists i (\vDash_{s_i} C $ and $ \forall j < i (\vDash_{s_j} B)))$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{CTL - Examples}
+    $\vDash_{s_0} \textsc{AG}(p_1 \lor p_2)$
+\begin{center}
+    \begin{tikzpicture}[thick, vertex/.style={draw=blue, circle, minimum size=2em,inner sep=0}]
+    \node (1) at (0,-1) [vertex] {\footnotesize $p_1$};
+    \node (2) at (1.3,0) [vertex] {\footnotesize $p_2$};
+    \node (3) at (1.3,-2) [vertex] {\footnotesize $p_0,p_1$};
+    \node (4) at (2.6,1) [vertex] {\footnotesize $p_2$};
+    \node (5) at (2.6,-1) [vertex] {\footnotesize $p_0,p_1$};
+    \node (6) at (2.6,-3) [vertex] {\footnotesize $p_1$};
+
+    \node (7) at (3.9,2) [vertex] {\footnotesize $p_2$};
+    \node (8) at (3.9,0.5) [vertex] {\footnotesize $p_0,p_1$};
+    \node (9) at (3.9,-1) [vertex] {\footnotesize $p_1$};
+    \node (10) at (3.9,-2.5) [vertex] {\footnotesize $p_2$};
+    \node (11) at (3.9,-4) [vertex] {\footnotesize $p_0,p_1$};
+
+    \node (a) at (5.2,2.5) {};
+    \node (a1) at (5.2,1.5) {};
+    \node (b) at (5.2,0.5) {};
+    \node (c) at (5.2,-0.5) {};
+    \node (c1) at (5.2,-1.5) {};
+    \node (d) at (5.2,-2) {};
+    \node (d1) at (5.2,-3) {};
+    \node (e) at (5.2,-4) {};
+
+    \draw (1) edge[->, red] (2)
+          (1) edge[->, red] (3)
+          (2) edge[->, red] (4)
+          (2) edge[->, red] (5)
+          (3) edge[->, red] (6)
+
+          (4) edge[->, red] (7)
+          (4) edge[->, red] (8)
+          (5) edge[->, red] (9)
+          (6) edge[->, red] (10)
+          (6) edge[->, red] (11)
+          
+          (7) edge[-, dashed, red] (a)
+          (7) edge[-, dashed, red] (a1)
+          (8) edge[-, dashed, red] (b)
+          (9) edge[-, dashed, red] (c)
+          (9) edge[-, dashed, red] (c1)
+          (10) edge[-, dashed, red] (d)
+          (10) edge[-, dashed, red] (d1)
+          (11) edge[-, dashed, red] (e)
+          ;
+    \end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{CTL - Examples}
+    $\vDash_{s_0} \textsc{EX }p_0$
+\begin{center}
+    \begin{tikzpicture}[thick, vertex/.style={draw, circle, minimum size=2em,inner sep=0}]
+    \node (1) at (0,-1) [vertex] {\footnotesize $p_1$};
+    \node (2) at (1.3,0) [vertex] {\footnotesize $p_2$};
+    \node (3) at (1.3,-2) [vertex, blue] {\textcolor{black}{\footnotesize $p_0,p_1$}};
+    \node (4) at (2.6,1) [vertex] {\footnotesize $p_2$};
+    \node (5) at (2.6,-1) [vertex] {\footnotesize $p_0,p_1$};
+    \node (6) at (2.6,-3) [vertex] {\footnotesize $p_1$};
+
+    \node (7) at (3.9,2) [vertex] {\footnotesize $p_2$};
+    \node (8) at (3.9,0.5) [vertex] {\footnotesize $p_0,p_1$};
+    \node (9) at (3.9,-1) [vertex] {\footnotesize $p_1$};
+    \node (10) at (3.9,-2.5) [vertex] {\footnotesize $p_2$};
+    \node (11) at (3.9,-4) [vertex] {\footnotesize $p_0,p_1$};
+
+    \node (a) at (5.2,2.5) {};
+    \node (a1) at (5.2,1.5) {};
+    \node (b) at (5.2,0.5) {};
+    \node (c) at (5.2,-0.5) {};
+    \node (c1) at (5.2,-1.5) {};
+    \node (d) at (5.2,-2) {};
+    \node (d1) at (5.2,-3) {};
+    \node (e) at (5.2,-4) {};
+
+    \draw (1) edge[->] (2)
+          (1) edge[->, red] (3)
+          (2) edge[->] (4)
+          (2) edge[->] (5)
+          (3) edge[->] (6)
+
+          (4) edge[->] (7)
+          (4) edge[->] (8)
+          (5) edge[->] (9)
+          (6) edge[->] (10)
+          (6) edge[->] (11)
+          
+          (7) edge[-, dashed] (a)
+          (7) edge[-, dashed] (a1)
+          (8) edge[-, dashed] (b)
+          (9) edge[-, dashed] (c)
+          (9) edge[-, dashed] (c1)
+          (10) edge[-, dashed] (d)
+          (10) edge[-, dashed] (d1)
+          (11) edge[-, dashed] (e)
+          ;
+    \end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{CTL - Examples}
+    $\vDash_{s_0} \textsc{EF }p_2$
+\begin{center}
+    \begin{tikzpicture}[thick, vertex/.style={draw, circle, minimum size=2em,inner sep=0}]
+    \node (1) at (0,-1) [vertex] {\footnotesize $p_1$};
+    \node (2) at (1.3,0) [vertex] {\footnotesize $p_2$};
+    \node (3) at (1.3,-2) [vertex] {\footnotesize $p_0,p_1$};
+    \node (4) at (2.6,1) [vertex] {\footnotesize $p_2$};
+    \node (5) at (2.6,-1) [vertex] {\footnotesize $p_0,p_1$};
+    \node (6) at (2.6,-3) [vertex] {\footnotesize $p_1$};
+
+    \node (7) at (3.9,2) [vertex] {\footnotesize $p_2$};
+    \node (8) at (3.9,0.5) [vertex] {\footnotesize $p_0,p_1$};
+    \node (9) at (3.9,-1) [vertex] {\footnotesize $p_1$};
+    \node (10) at (3.9,-2.5) [vertex, blue] {\textcolor{black}{\footnotesize $p_2$}};
+    \node (11) at (3.9,-4) [vertex] {\footnotesize $p_0,p_1$};
+
+    \node (a) at (5.2,2.5) {};
+    \node (a1) at (5.2,1.5) {};
+    \node (b) at (5.2,0.5) {};
+    \node (c) at (5.2,-0.5) {};
+    \node (c1) at (5.2,-1.5) {};
+    \node (d) at (5.2,-2) {};
+    \node (d1) at (5.2,-3) {};
+    \node (e) at (5.2,-4) {};
+
+    \draw (1) edge[->] (2)
+          (1) edge[->, red] (3)
+          (2) edge[->] (4)
+          (2) edge[->] (5)
+          (3) edge[->, red] (6)
+
+          (4) edge[->] (7)
+          (4) edge[->] (8)
+          (5) edge[->] (9)
+          (6) edge[->, red] (10)
+          (6) edge[->] (11)
+          
+          (7) edge[-, dashed] (a)
+          (7) edge[-, dashed] (a1)
+          (8) edge[-, dashed] (b)
+          (9) edge[-, dashed] (c)
+          (9) edge[-, dashed] (c1)
+          (10) edge[-, dashed] (d)
+          (10) edge[-, dashed] (d1)
+          (11) edge[-, dashed] (e)
+          ;
+    \end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{CTL - Examples}
+    $\nvDash_{s_0} \textsc{A}((p_0 \lor p_1)\textsc{U}p_2)$
+\begin{center}
+    \begin{tikzpicture}[thick, vertex/.style={draw, circle, minimum size=2em,inner sep=0}]
+    \node (1) at (0,-1) [vertex] {\footnotesize $p_1$};
+    \node (2) at (1.3,0) [vertex, blue] {\textcolor{black}{\footnotesize $p_2$}};
+    \node (3) at (1.3,-2) [vertex] {\footnotesize $p_0,p_1$};
+    \node (4) at (2.6,1) [vertex] {\footnotesize $p_2$};
+    \node (5) at (2.6,-1) [vertex] {\footnotesize $p_0,p_1$};
+    \node (6) at (2.6,-3) [vertex] {\footnotesize $p_1$};
+
+    \node (7) at (3.9,2) [vertex] {\footnotesize $p_2$};
+    \node (8) at (3.9,0.5) [vertex] {\footnotesize $p_0,p_1$};
+    \node (9) at (3.9,-1) [vertex] {\footnotesize $p_1$};
+    \node (10) at (3.9,-2.5) [vertex, blue] {\textcolor{black}{\footnotesize $p_2$}};
+    \node (11) at (3.9,-4) [vertex] {\footnotesize $p_0,p_1$};
+
+    \node (a) at (5.2,2.5) {};
+    \node (a1) at (5.2,1.5) {};
+    \node (b) at (5.2,0.5) {};
+    \node (c) at (5.2,-0.5) {};
+    \node (c1) at (5.2,-1.5) {};
+    \node (d) at (5.2,-2) {};
+    \node (d1) at (5.2,-3) {};
+    \node (e) at (5.2,-4) {};
+
+    \draw (1) edge[->, red] (2)
+          (1) edge[->, red] (3)
+          (2) edge[->] (4)
+          (2) edge[->] (5)
+          (3) edge[->, red] (6)
+
+          (4) edge[->] (7)
+          (4) edge[->] (8)
+          (5) edge[->] (9)
+          (6) edge[->, red] (10)
+          (6) edge[->, cyan] (11)
+
+          (7) edge[-, dashed] (a)
+          (7) edge[-, dashed] (a1)
+          (8) edge[-, dashed] (b)
+          (9) edge[-, dashed] (c)
+          (9) edge[-, dashed] (c1)
+          (10) edge[-, dashed] (d)
+          (10) edge[-, dashed] (d1)
+          (11) edge[-, dashed, cyan] (e)
+          ;
+    \end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{CTL - Examples}
+\centering
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.8cm,inner sep=0,very thick,initial text=$ $]
+    \node[state, initial, label={[yshift=0.15cm]$s_0$}] (1) {\footnotesize $p_1$};
+    \node[state, below left of=1, label={[yshift=-1.45cm]{$s_1$}}] (2) {\footnotesize $p_2$};
+    \node[state, right of=2, label={[yshift=-1.45cm]{$s_2$}}] (3) {\footnotesize $p_0,p_1$};
+    \draw (1) edge[above] (2)
+          (1) edge[below, bend right, left=0.3, cyan]  (3)
+          (2) edge[loop left] (2)
+          (2) edge[below] (3)
+          (3) edge[above, bend right, right=0.3, cyan] (1);
+    \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Linear temporal logic (LTL)}
+\begin{multicols}{2}
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.8cm,inner sep=0,very thick,initial text=$ $]
+    \node[state, initial, label={[yshift=0.15cm]$s_0$}] (1) {\footnotesize $p_1$};
+    \node[state, below left of=1, label={[yshift=-1.45cm]{$s_1$}}] (2) {\footnotesize $p_2$};
+    \node[state, right of=2, label={[yshift=-1.45cm]{$s_2$}}] (3) {\footnotesize $p_0,p_1$};
+    \draw (1) edge[above] (2)
+          (1) edge[below, bend right, left=0.3]  (3)
+          (2) edge[loop left] (2)
+          (2) edge[below] (3)
+          (3) edge[above, bend right, right=0.3] (1);
+    \end{tikzpicture}
+
+    \endgraf
+    \columnbreak
+    \endgraf
+    \hspace{1em}
+    \vspace{0.4em}
+    \endgraf
+    \begin{tikzpicture}[thick, vertex/.style={draw, circle, minimum size=2em,inner sep=0}]
+    \node (1) at (0,0) [vertex] {\footnotesize $p_1$};
+    \node (2) at (1.3,0) [vertex] {\footnotesize $p_2$};
+    \node (3) at (2.6,0) [vertex] {\footnotesize $p_0,p_1$};
+    \node (4) at (3.9,0) [vertex] {\footnotesize $p_1$};
+    \node (5) at (5.2,0) {};
+    \node (a) at (0,-1) [vertex] {\footnotesize $p_1$};
+    \node (b) at (1.3,-1) [vertex] {\footnotesize $p_0,p_1$};
+    \node (c) at (2.6,-1) [vertex] {\footnotesize $p_1$};
+    \node (d) at (3.9,-1) [vertex] {\footnotesize $p_2$};
+    \node (e) at (5.2,-1) {};
+    \node (a1) at (0,-2) [vertex] {\footnotesize $p_1$};
+    \node (b2) at (1.3,-2) [vertex] {\footnotesize $p_2$};
+    \node (c3) at (2.6,-2) [vertex] {\footnotesize $p_2$};
+    \node (d4) at (3.9,-2) [vertex] {\footnotesize $p_2$};
+    \node (e5) at (5.2,-2) {};
+    \draw (1) edge[->] (2)
+          (2) edge[->] (3)
+          (3) edge[->] (4)
+          (4) edge[-, dashed] (5)
+          (a) edge[->] (b)
+          (b) edge[->] (c)
+          (c) edge[->] (d)
+          (d) edge[-, dashed] (e)
+          (a1) edge[->] (b2)
+          (b2) edge[->] (c3)
+          (c3) edge[->] (d4)
+          (d4) edge[-, dashed] (e5);
+    \end{tikzpicture}
+    \endgraf
+    \hspace{6em}\vdots
+\end{multicols}
+\end{frame}
+
+\begin{frame}{Conclusions}
+    \centering LTL vs CTL vs CTL* vs $\mu$-calculus
+\end{frame}
+
+\end{document}
+
